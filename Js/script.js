@@ -1,8 +1,138 @@
 const AddButtons = document.querySelectorAll(".add");
 const parenDivs = document.querySelectorAll(".container-boxez div");
 let drag;
+let dragDateId;
+let oldPos;
 let scrollDelay = 0;
 let scrollDirection = 1;
+
+let dataToLocalStorage = {
+    not_started: [],
+    progress: [],
+    completed: [],
+};
+
+function createELementsAndAppend(Ul, taskObj, contentEdit = false) {
+    const li = document.createElement("li");
+    const p = document.createElement("p");
+    const editIcon = document.createElement("i");
+    const trashIcon = document.createElement("i");
+    const span = document.createElement("span");
+    trashIcon.classList.add("fa-solid", "fa-trash-can");
+    editIcon.classList.add("fa-solid", "fa-pen-to-square");
+    span.appendChild(editIcon);
+    span.appendChild(trashIcon);
+    Ul.appendChild(li);
+    li.appendChild(p);
+    li.appendChild(span);
+    li.draggable = true;
+    li.addEventListener("dblclick", (event) => {
+        event.target.querySelector("p").contentEditable = true;
+        p.focus();
+    });
+
+    // p Events Listener
+
+    p.addEventListener("dblclick", (event) => {
+        event.target.contentEditable = true;
+        p.focus();
+    });
+
+    p.addEventListener("blur", (event) => {
+        event.preventDefault();
+
+        event.target.contentEditable = false;
+        UpdateItem(taskObj.id, event.target.textContent);
+    });
+
+    p.addEventListener("keydown", (event) => {
+        // event.preventDefault();
+        if (event.key === "Enter") {
+            event.target.contentEditable = false;
+
+            UpdateItem(taskObj.id, event.target.textContent);
+        }
+    });
+    // Edit icon and tarsh evetns
+
+    trashIcon.addEventListener("click", (event) => {
+        event.target.parentElement.parentElement.remove();
+        deleteItem(taskObj.id, Ul.parentElement.id);
+    });
+    editIcon.addEventListener("click", (event) => {
+        const pEdit = event.target.parentElement.previousElementSibling;
+        if (pEdit.contentEditable === "true") {
+            pEdit.contentEditable = false;
+            UpdateItem(
+                taskObj.id,
+                event.target.parentElement.previousElementSibling.textContent
+            );
+        } else {
+            pEdit.contentEditable = true;
+            p.focus();
+        }
+    });
+
+    trashIcon.addEventListener("touchstart", (event) => {
+        event.preventDefault();
+        event.target.parentElement.parentElement.remove();
+        deleteItem(taskObj.id, Ul.parentElement.id);
+    });
+    editIcon.addEventListener("touchstart", (event) => {
+        event.preventDefault();
+        const pEdit = event.target.parentElement.previousElementSibling;
+
+        pEdit.contentEditable = true;
+        p.focus();
+    });
+    // li Events Listener
+
+    li.addEventListener(
+        "dragstart",
+        (event) => {
+            drag = event.target;
+            dragDateId = event.target.getAttribute("data-date");
+            oldPos = event.target.parentElement.parentElement.id;
+            li.style.opacity = "0.5";
+        },
+        false
+    );
+
+    li.addEventListener("dragend", (event) => {
+        drag = null;
+        dragDateId = null;
+        oldPos = null;
+        console.log(event.target);
+        li.style.opacity = "1";
+    });
+    li.addEventListener(
+        "touchstart",
+        (event) => {
+            event.preventDefault();
+            // drag = event.target;
+            drag = event.target;
+            dragDateId = event.target.getAttribute("data-date");
+            oldPos = event.target.parentElement.parentElement.id;
+            li.style.opacity = "0.5";
+            li.classList.add("drag-item--touchmove");
+
+            console.log("drag start");
+        },
+        false
+    );
+
+    li.addEventListener("touchmove", touchMove, false);
+    li.addEventListener("touchend", touchEnd, false);
+    p.textContent = taskObj.task;
+    li.setAttribute("data-date", taskObj.id);
+    console.log(li);
+    console.log(taskObj.id);
+    if (contentEdit) {
+        p.contentEditable = true;
+        p.focus();
+    }
+}
+
 function pageScroll(a, b) {
     window.scrollBy(0, scrollDirection); // horizontal and vertical scroll increments
     scrollDelay = setTimeout(pageScroll, 5); // scrolls every 100 milliseconds
@@ -26,115 +156,14 @@ parenDivs.forEach((childDiv) => {
 
     childDiv.addEventListener(
         "drop",
-        () => {
-            childDiv.querySelector("ul").append(drag);
-
-            console.log("even");
+        (event) => {
+            const divId = event.target.id;
+            const ul = childDiv.querySelector("ul");
+            ul.append(drag);
+            UpdateDrop(dragDateId, divId);
         },
         false
     );
-});
-AddButtons.forEach((AddButton) => {
-    AddButton.addEventListener("click", (event) => {
-        const closestUl = event.target.parentElement.querySelector("ul");
-        const li = document.createElement("li");
-        const p = document.createElement("p");
-        const editIcon = document.createElement("i");
-        const trashIcon = document.createElement("i");
-        const span = document.createElement("span");
-        trashIcon.classList.add("fa-solid", "fa-trash-can");
-        editIcon.classList.add("fa-solid", "fa-pen-to-square");
-        span.appendChild(editIcon);
-        span.appendChild(trashIcon);
-        closestUl.appendChild(li);
-        li.appendChild(p);
-        li.appendChild(span);
-        li.draggable = true;
-        p.contentEditable = true;
-
-        // li Events Listener
-        li.addEventListener("dblclick", (event) => {
-            event.target.querySelector("p").contentEditable = true;
-            p.focus();
-        });
-
-        // p Events Listener
-        p.addEventListener("dblclick", (event) => {
-            event.target.contentEditable = true;
-            p.focus();
-        });
-
-        p.addEventListener("blur", (event) => {
-            event.target.contentEditable = false;
-        });
-
-        p.addEventListener("keydown", (event) => {
-            if (event.key === "Enter") {
-                event.target.contentEditable = false;
-            }
-        });
-
-        p.focus();
-        // Edit icon and tarsh evetns
-        trashIcon.addEventListener("click", (event) => {
-            event.target.parentElement.parentElement.remove();
-        });
-        editIcon.addEventListener("click", (event) => {
-            const pEdit = event.target.parentElement.previousElementSibling;
-            if (pEdit.contentEditable === "true") {
-                pEdit.contentEditable = false;
-                console.log("k");
-            } else {
-                pEdit.contentEditable = true;
-                p.focus();
-            }
-        });
-
-        trashIcon.addEventListener("touchstart", (event) => {
-            event.preventDefault();
-            event.target.parentElement.parentElement.remove();
-        });
-        editIcon.addEventListener("touchstart", (event) => {
-            event.preventDefault();
-
-            const pEdit = event.target.parentElement.previousElementSibling;
-            if (pEdit.contentEditable === "true") {
-                pEdit.contentEditable = false;
-            } else {
-                pEdit.contentEditable = true;
-                p.focus();
-            }
-        });
-        li.addEventListener(
-            "dragstart",
-            (event) => {
-                drag = event.target;
-                li.style.opacity = "0.5";
-            },
-            false
-        );
-
-        li.addEventListener("dragend", (event) => {
-            drag = null;
-            console.log(event.target);
-            li.style.opacity = "1";
-        });
-        li.addEventListener(
-            "touchstart",
-            (event) => {
-                event.preventDefault();
-                drag = event.target;
-                li.style.opacity = "0.5";
-                li.classList.add("drag-item--touchmove");
-
-                console.log("drag start");
-            },
-            false
-        );
-
-        li.addEventListener("touchmove", touchMove, false);
-        li.addEventListener("touchend", touchEnd, false);
-    });
 });
 
 let x = 1;
@@ -187,19 +216,131 @@ function touchEnd(e) {
         if (b1 < y2 || y1 > b2 || r1 < x2 || x1 > r2) {
             return false;
         } else {
-            console.log("else1");
+            // console.log("else1");
             if (touchEl.classList.contains("drag-item--prepend")) {
                 target.prepend(touchEl);
             } else {
-                console.log("else2");
+                const divId = e.target.parentElement.parentElement.id;
+                UpdateDrop(dragDateId, divId);
 
                 target.querySelector("ul").appendChild(touchEl);
             }
         }
     });
-
+    drag = null;
+    dragDateId = null;
+    oldPos = null;
     this.removeAttribute("style");
     this.classList.remove("drag-item--touchmove");
     clearTimeout(scrollDelay);
     x = 1;
 }
+
+AddButtons.forEach((AddButton) => {
+    AddButton.addEventListener("click", (event) => {
+        const parentDivBtn = event.target.parentElement;
+        const id = new Date().getTime();
+        // console.log;
+        const taskElement = {
+            id: id,
+            task: " ",
+        };
+
+        createELementsAndAppend(
+            parentDivBtn.querySelector("ul"),
+            taskElement,
+            true
+        );
+        console.log(typeof parentDivBtn.id);
+        dataToLocalStorage[parentDivBtn.id].push(taskElement);
+        console.log(dataToLocalStorage);
+        save(dataToLocalStorage);
+    });
+});
+// Local Storage
+function read() {
+    // console.log(localStorage);
+    let json = localStorage.getItem("KanbanData");
+    // console.log(json, "JSON READ");
+    if (!json)
+        return {
+            not_started: [],
+            progress: [],
+            completed: [],
+        };
+    return JSON.parse(json);
+}
+
+// function CheckEmpty(d){
+//     d.forEach
+// }
+
+function save(data) {
+    dataToLocalStorage = data;
+    console.log(data);
+    localStorage.setItem("KanbanData", JSON.stringify(data));
+}
+
+function deleteItem(datadate, pos) {
+    const data = read();
+    let item;
+    // data[pos]
+    item = data[pos].find((item) => item.id == datadate);
+    if (!item) return;
+    const index = data[pos].indexOf(item);
+    if (index > -1) {
+        data[pos].splice(index, 1);
+    }
+    save(data);
+}
+
+function UpdateDrop(datadate, newPos) {
+    const data = read();
+    let item;
+
+    item = data[oldPos].find((item) => item.id == datadate);
+
+    if (!item) return;
+    const index = data[oldPos].indexOf(item);
+    if (index > -1) {
+        data[oldPos].splice(index, 1);
+    }
+    deleteItem(datadate, oldPos);
+
+    // console.log(data);
+    data[newPos].push(item);
+    save(data);
+}
+
+////////////////////////////////////////
+function UpdateItem(datadate, newUpdate) {
+    const data = read();
+    let item;
+    for (let cul in data) {
+        item = data[cul].find((item) => item.id == datadate);
+        console.log("FORLOOP", item);
+        if (item) break;
+    }
+    console.log(item);
+    if (!item) return;
+
+    console.log("NEWUPDATE", newUpdate);
+    item.task = newUpdate;
+    save(data);
+}
+
+function RenderFromLocalStorage(data) {
+    for (const stateClass in data) {
+        const cul = document.getElementById(stateClass);
+        console.log(stateClass);
+        const StateUl = cul.querySelector("ul");
+        data[stateClass].forEach((taskObj) => {
+            createELementsAndAppend(StateUl, taskObj);
+        });
+    }
+}
+
+window.addEventListener("load", () => {
+    dataToLocalStorage = read();
+    RenderFromLocalStorage(dataToLocalStorage);
+});
