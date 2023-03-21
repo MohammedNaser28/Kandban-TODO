@@ -1,5 +1,10 @@
 const AddButtons = document.querySelectorAll(".add");
 const parenDivs = document.querySelectorAll(".container-boxez div");
+const MyMenu = document.getElementById("myMenu");
+const copy = document.getElementById("copy");
+const colorChoice = document.getElementById("color");
+const colorPicker = document.getElementById("colorPicker");
+let stateCopy;
 let drag;
 let dragDateId;
 let oldPos;
@@ -11,6 +16,19 @@ let dataToLocalStorage = {
     progress: [],
     completed: [],
 };
+document.addEventListener("click", () => {
+    MyMenu.style.display = "none";
+    stateCopy = null;
+});
+
+copy.addEventListener("click", () => {
+    copyToCliboard(stateCopy);
+});
+
+function copyToCliboard(element) {
+    const text = element.textContent;
+    navigator.clipboard.writeText(text);
+}
 
 function createELementsAndAppend(Ul, taskObj, contentEdit = false) {
     const li = document.createElement("li");
@@ -18,8 +36,8 @@ function createELementsAndAppend(Ul, taskObj, contentEdit = false) {
     const editIcon = document.createElement("i");
     const trashIcon = document.createElement("i");
     const span = document.createElement("span");
-    trashIcon.classList.add("fa-solid", "fa-trash-can");
-    editIcon.classList.add("fa-solid", "fa-pen-to-square");
+    trashIcon.classList.add("fa-solid", "fa-trash-can", "trash");
+    editIcon.classList.add("fa-solid", "fa-pen-to-square", "edit");
     span.appendChild(editIcon);
     span.appendChild(trashIcon);
     Ul.appendChild(li);
@@ -99,10 +117,13 @@ function createELementsAndAppend(Ul, taskObj, contentEdit = false) {
     );
 
     li.addEventListener("dragend", (event) => {
+        // const divId = event.target.parentElement.parentElement.id;
+        // const ul = childDiv.querySelector("ul");
+        // UpdateDrop(dragDateId, divId);
         drag = null;
         dragDateId = null;
         oldPos = null;
-        console.log(event.target);
+        // ul.append(drag);
         li.style.opacity = "1";
     });
     li.addEventListener(
@@ -120,6 +141,14 @@ function createELementsAndAppend(Ul, taskObj, contentEdit = false) {
         },
         false
     );
+    li.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+        MyMenu.style.display = "block";
+        MyMenu.classList.add("show");
+        MyMenu.style.top = event.pageY + "px"; // position the context menu at the mouse pointer
+        MyMenu.style.left = event.pageX + "px";
+        stateCopy = event.target;
+    });
 
     li.addEventListener("touchmove", touchMove, false);
     li.addEventListener("touchend", touchEnd, false);
@@ -132,6 +161,10 @@ function createELementsAndAppend(Ul, taskObj, contentEdit = false) {
         p.focus();
     }
 }
+
+// function DragEnd(dateID,cul){
+
+// }
 
 function pageScroll(a, b) {
     window.scrollBy(0, scrollDirection); // horizontal and vertical scroll increments
@@ -154,16 +187,30 @@ parenDivs.forEach((childDiv) => {
         false
     );
 
-    childDiv.addEventListener(
-        "drop",
-        (event) => {
-            const divId = event.target.id;
-            const ul = childDiv.querySelector("ul");
-            ul.append(drag);
-            UpdateDrop(dragDateId, divId);
-        },
-        false
-    );
+    childDiv.addEventListener("drop", (event) => {
+        let divId = event.target;
+        if (divId.tagName !== "DIV") {
+            if (divId.tagName === "H2") {
+                divId = divId.parentElement.id;
+            } else if (divId.tagName === "UL") {
+                divId = divId.parentElement.id;
+            } else if (divId.tagName === "LI") {
+                divId = divId.parentElement.parentElement.id;
+            } else if (divId.tagName === "BUTTON") {
+                divId = divId.parentElement.id;
+            } else if (divId.tagName == "P") {
+                divId = divId.parentElement.parentElement.parentElement.id;
+            } else if (divId.tagName === "I") {
+                divId =
+                    divId.parentElement.parentElement.parentElement
+                        .parentElement.id;
+            }
+        }
+        const ul = childDiv.querySelector("ul");
+        ul.append(drag);
+        console.log("divId", divId);
+        UpdateDrop(dragDateId, divId);
+    });
 });
 
 let x = 1;
@@ -306,8 +353,9 @@ function UpdateDrop(datadate, newPos) {
         data[oldPos].splice(index, 1);
     }
     deleteItem(datadate, oldPos);
+    console.log(oldPos, "OLD", newPos);
+    console.log(data[newPos], "ERROR");
 
-    // console.log(data);
     data[newPos].push(item);
     save(data);
 }
