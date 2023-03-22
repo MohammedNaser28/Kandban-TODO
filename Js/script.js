@@ -21,6 +21,12 @@ document.addEventListener("click", () => {
     stateCopy = null;
 });
 
+// document.addEventListener("keyup",(event)=>{
+//     if(event.ctrlKey && event.key === "Z"){
+
+//     }
+// })
+
 copy.addEventListener("click", () => {
     copyToCliboard(stateCopy);
 });
