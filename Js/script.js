@@ -14,6 +14,7 @@ let dataToLocalStorage = {
     progress: [],
     completed: [],
 };
+
 document.addEventListener("click", () => {
     MyMenu.style.display = "none";
     stateCopy = null;
@@ -89,12 +90,11 @@ function createELementsAndAppend(Ul, taskObj, contentEdit = false) {
     });
 
     trashIcon.addEventListener("touchstart", (event) => {
-        event.preventDefault();
         event.target.parentElement.parentElement.remove();
         deleteItem(taskObj.id, Ul.parentElement.id);
     });
+
     editIcon.addEventListener("touchstart", (event) => {
-        event.preventDefault();
         const pEdit = event.target.parentElement.previousElementSibling;
 
         pEdit.contentEditable = true;
@@ -113,6 +113,68 @@ function createELementsAndAppend(Ul, taskObj, contentEdit = false) {
         false
     );
 
+    li.addEventListener(
+        "touchstart",
+        (event) => {
+            if (event.target.tagName !== "LI") {
+                if (event.target.tagName === "I") {
+                    drag = event.target.parentElement.parentElement;
+                }
+            } else {
+                drag = event.target;
+            }
+            li.style.opacity = "0.5";
+
+            [...event.changedTouches].forEach((touch) => {
+                li.style.left = `${touch.pageX}px`;
+                li.style.top = `${touch.pageY}px`;
+                li.id = touch.identifier;
+            });
+
+            dragDateId = event.target.getAttribute("data-date");
+            oldPos = event.target.parentElement.parentElement.id;
+        },
+        false
+    );
+
+    li.addEventListener("touchmove", (event) => {
+        event.preventDefault();
+        [...event.changedTouches].forEach((touch) => {
+            li.style.position = "absolute";
+            li.style.top = `${touch.pageY}px`;
+            li.style.left = `${touch.pageX}px`;
+            li.id = touch.identifier;
+
+            parenDivs.forEach((childDiv) => {
+                if (childDiv.offsetTop < touch.pageY) {
+                    let uls = childDiv.querySelector("ul");
+                    childDiv.style.backgroundColor = "red";
+                } else {
+                    let uls = childDiv.querySelector("ul");
+                    childDiv.style.backgroundColor = "green";
+                }
+            });
+        });
+    });
+    li.addEventListener("touchend", (event) => {
+        li.style.opacity = "1";
+        [...event.changedTouches].forEach((touch) => {
+            li.style.position = "relative";
+            li.style.top = "0px";
+            li.style.left = "0px";
+            li.id = touch.identifier;
+
+            parenDivs.forEach((childDiv) => {
+                if (childDiv.offsetTop < touch.pageY && drag !== null) {
+                    let uls = childDiv.querySelector("ul");
+                    childDiv.style.backgroundColor = "red";
+                    uls.appendChild(drag);
+                    UpdateDrop(dragDateId, event.target.id);
+                }
+            });
+        });
+        drag = null;
+    });
     li.addEventListener("dragend", (event) => {
         drag = null;
         dragDateId = null;
@@ -175,28 +237,23 @@ AddButtons.forEach((AddButton) => {
     AddButton.addEventListener("click", (event) => {
         const parentDivBtn = event.target.parentElement;
         const id = new Date().getTime();
-        // console.log;
         const taskElement = {
             id: id,
             task: " ",
         };
-
         createELementsAndAppend(
             parentDivBtn.querySelector("ul"),
             taskElement,
             true
         );
-        console.log(typeof parentDivBtn.id);
         dataToLocalStorage[parentDivBtn.id].push(taskElement);
-        console.log(dataToLocalStorage);
         save(dataToLocalStorage);
     });
 });
+
 // Local Storage
 function read() {
-    // console.log(localStorage);
     let json = localStorage.getItem("KanbanData");
-    // console.log(json, "JSON READ");
     if (!json)
         return {
             not_started: [],
@@ -208,7 +265,6 @@ function read() {
 
 function save(data) {
     dataToLocalStorage = data;
-    console.log(data);
     localStorage.setItem("KanbanData", JSON.stringify(data));
 }
 
@@ -237,8 +293,6 @@ function UpdateDrop(datadate, newPos) {
         data[oldPos].splice(index, 1);
     }
     deleteItem(datadate, oldPos);
-    console.log(oldPos, "OLD", newPos);
-    console.log(data[newPos], "ERROR");
 
     data[newPos].push(item);
     save(data);
@@ -250,13 +304,10 @@ function UpdateItem(datadate, newUpdate) {
     let item;
     for (let cul in data) {
         item = data[cul].find((item) => item.id == datadate);
-        console.log("FORLOOP", item);
         if (item) break;
     }
-    console.log(item);
     if (!item) return;
 
-    console.log("NEWUPDATE", newUpdate);
     item.task = newUpdate;
     save(data);
 }
