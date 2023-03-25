@@ -113,68 +113,24 @@ function createELementsAndAppend(Ul, taskObj, contentEdit = false) {
         false
     );
 
-    li.addEventListener(
-        "touchstart",
-        (event) => {
-            if (event.target.tagName !== "LI") {
-                if (event.target.tagName === "I") {
-                    drag = event.target.parentElement.parentElement;
-                }
-            } else {
-                drag = event.target;
-            }
-            li.style.opacity = "0.5";
+    li.addEventListener("touchstart", handleTouchStart, false);
 
+    li.addEventListener(
+        "touchmove",
+        (event) => {
+            event.preventDefault();
+            console.log("From Move Element", oldPos);
             [...event.changedTouches].forEach((touch) => {
-                li.style.left = `${touch.pageX}px`;
-                li.style.top = `${touch.pageY}px`;
+                li.style.position = "absolute";
+                li.style.top = `${touch.pageY - 15}px`;
+                li.style.left = `${touch.pageX - 15}px`;
                 li.id = touch.identifier;
             });
-
-            dragDateId = event.target.getAttribute("data-date");
-            oldPos = event.target.parentElement.parentElement.id;
         },
         false
     );
+    li.addEventListener("touchend", handleTouchEnd, false);
 
-    li.addEventListener("touchmove", (event) => {
-        event.preventDefault();
-        [...event.changedTouches].forEach((touch) => {
-            li.style.position = "absolute";
-            li.style.top = `${touch.pageY}px`;
-            li.style.left = `${touch.pageX}px`;
-            li.id = touch.identifier;
-
-            parenDivs.forEach((childDiv) => {
-                if (childDiv.offsetTop < touch.pageY) {
-                    let uls = childDiv.querySelector("ul");
-                    childDiv.style.backgroundColor = "red";
-                } else {
-                    let uls = childDiv.querySelector("ul");
-                    childDiv.style.backgroundColor = "green";
-                }
-            });
-        });
-    });
-    li.addEventListener("touchend", (event) => {
-        li.style.opacity = "1";
-        [...event.changedTouches].forEach((touch) => {
-            li.style.position = "relative";
-            li.style.top = "0px";
-            li.style.left = "0px";
-            li.id = touch.identifier;
-
-            parenDivs.forEach((childDiv) => {
-                if (childDiv.offsetTop < touch.pageY && drag !== null) {
-                    let uls = childDiv.querySelector("ul");
-                    childDiv.style.backgroundColor = "red";
-                    uls.appendChild(drag);
-                    UpdateDrop(dragDateId, event.target.id);
-                }
-            });
-        });
-        drag = null;
-    });
     li.addEventListener("dragend", (event) => {
         drag = null;
         dragDateId = null;
@@ -226,6 +182,8 @@ parenDivs.forEach((childDiv) => {
                     divId.parentElement.parentElement.parentElement
                         .parentElement.id;
             }
+        } else {
+            divId = divId.id;
         }
         const ul = childDiv.querySelector("ul");
         ul.append(drag);
@@ -286,14 +244,12 @@ function UpdateDrop(datadate, newPos) {
     let item;
 
     item = data[oldPos].find((item) => item.id == datadate);
-
     if (!item) return;
     const index = data[oldPos].indexOf(item);
     if (index > -1) {
         data[oldPos].splice(index, 1);
     }
     deleteItem(datadate, oldPos);
-
     data[newPos].push(item);
     save(data);
 }
@@ -326,3 +282,57 @@ window.addEventListener("load", () => {
     dataToLocalStorage = read();
     RenderFromLocalStorage(dataToLocalStorage);
 });
+
+function handleTouchStart(event) {
+    if (event.target.tagName !== "LI") {
+        if (event.target.tagName === "I") {
+            drag = event.target.parentElement.parentElement;
+        }
+    } else {
+        drag = event.target;
+    }
+    event.target.style.opacity = "0.5";
+
+    [...event.changedTouches].forEach((touch) => {
+        event.target.style.left = `${touch.pageX / 100}px`;
+        event.target.style.top = `${touch.pageY / 100}px`;
+        event.target.id = touch.identifier;
+    });
+
+    dragDateId = event.target.getAttribute("data-date");
+    oldPos = event.target.parentElement.parentElement.id;
+}
+
+// This funny problem i take three days to solve it
+/*
+the problem was when i try to drop element to completed clumn (the last column by defualt)
+it was added to progress or not_started 
+
+I found the solve to this issue when i remove UpdateDrop function form if condation block and 
+added it to the end of the block of the function because
+there was forEach loop 
+so when for loop end the update drop function recalled
+*/
+function handleTouchEnd(event) {
+    let newPOS;
+    event.target.style.opacity = "1";
+    [...event.changedTouches].forEach((touch) => {
+        event.target.style.position = "relative";
+        event.target.style.top = "0px";
+        event.target.style.left = "0px";
+        event.target.id = touch.identifier;
+        parenDivs.forEach((childDiv) => {
+            if (childDiv.offsetTop < touch.pageY && drag !== null) {
+                let uls = childDiv.querySelector("ul");
+                console.log(uls.parentElement.id, "FromTouchEnd");
+                uls.appendChild(drag);
+                newPOS = event.target.parentElement.parentElement.id;
+                console.log(newPOS, "FromTouchEnd");
+            }
+        });
+    });
+    UpdateDrop(dragDateId, newPOS);
+    dragDateId = null;
+    oldPos = null;
+    drag = null;
+}
