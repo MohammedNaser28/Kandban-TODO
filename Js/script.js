@@ -237,11 +237,11 @@ function createELementsAndAppend(Ul, taskObj, contentEdit = false) {
                 }
                 parenDivs.forEach((childDiv) => {
                     if (childDiv.offsetTop < touch.pageY) {
-                        let currentList = childDiv.querySelector("ul");
-                        currentList.classList.add("over");
+                        let currentChild = childDiv.querySelector("ul");
+                        currentChild.classList.add("over");
                     } else {
-                        let currentList = childDiv.querySelector("ul");
-                        currentList.classList.remove("over");
+                        let currentChild = childDiv.querySelector("ul");
+                        currentChild.classList.remove("over");
                     }
                 });
             });
