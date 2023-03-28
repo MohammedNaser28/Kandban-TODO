@@ -1,6 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;700&family=McLaren&display=swap");
+/* Thi was made because I wnated to let user change the color of page Still Under work */
 :root {
-    --font-size: calc(1vw+0.2rem);
     --body-color: #2c3333;
     --heading-color: #cbe4de;
     --li-tasks: #0e8388;
@@ -16,7 +15,6 @@
     box-sizing: border-box;
 }
 html {
-    /* height: 100%; */
     font-size: 62.5%;
 }
 ::-webkit-scrollbar {
@@ -24,7 +22,6 @@ html {
     left: -1vw;
 }
 ::-webkit-scrollbar-track {
-    /* box-shadow: inset 0 0 5px grey; */
     border-radius: 1rem;
     margin-left: 2rem;
 }
@@ -60,16 +57,16 @@ header {
 }
 
 h1 {
-    font-size: 6vw;
+    font-size: 5.5vw;
     color: var(--heading-color);
 }
 
 h2 {
-    font-size: 4vw;
+    font-size: 3vw;
     color: var(--heading-color);
 }
 main {
-    min-height: 70vh;
+    min-height: 50vh;
 }
 .drag-item--touchmove {
     box-shadow: 0 0.5rem 1rem rgba(250, 200, 150, 1);
@@ -124,7 +121,6 @@ span i {
     text-decoration: none !important;
 }
 span i {
-    /* opacity: 0; */
     margin-left: 1rem;
     cursor: pointer;
     font-size: 1.8rem;
@@ -134,7 +130,7 @@ span i:hover {
     opacity: 1;
 }
 .container-boxez div {
-    max-height: 50vh;
+    max-height: 40vh;
     flex-direction: column;
     display: flex;
 
@@ -143,7 +139,7 @@ span i:hover {
 
 .container-boxez ul {
     max-height: 40vh;
-    overflow: auto;
+    overflow-y: scroll;
 }
 
 .completed-list p {
@@ -174,12 +170,11 @@ button {
     cursor: pointer;
     border: none;
     border-radius: 1.2rem;
-    font-size: 4vw;
+    font-size: 3vw;
     color: var(--heading-color);
     background-color: var(--button-color);
 }
-button:hover,
-button:focus {
+button:hover {
     color: #ffffff;
     background-color: var(--li-tasks);
 }
@@ -202,18 +197,12 @@ button:focus {
 }
 
 /* FOOTER STYLE*/
-/* Commented for some problems and I was سخ due to the rush to deliver the assignment*/
-/* 
+
 footer {
     border: 1px solid;
     border-color: rgba(203, 228, 222, 0.5) transparent transparent;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    position: absolute;
 }
 footer div {
-    margin-top: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -236,14 +225,23 @@ footer div {
     color: #0e8388;
     font-size: 4rem;
 }
-*/
 
-/* @media (max-width:) {
-    
-} */
+.over {
+    transform: scale(1.1);
+    transition: all 0.25s ease-in-out;
+}
 
-@media (max-width: 40em) {
+@media (max-width: 50em) {
     .container-boxez {
         grid-template-columns: 1fr;
+        max-height: fit-content;
+    }
+    button,
+    h2 {
+        font-size: 5vw;
+    }
+    footer {
+        border: 1px solid;
+        border-color: rgba(203, 228, 222, 0.5) transparent transparent;
     }
 }

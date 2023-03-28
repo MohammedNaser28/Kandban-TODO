@@ -1,13 +1,16 @@
+// Global variables tht used
 const AddButtons = document.querySelectorAll(".add");
 const parenDivs = document.querySelectorAll(".container-boxez div");
 const MyMenu = document.getElementById("myMenu");
 const copy = document.getElementById("copy");
+/* This feature  Still under work
 const colorChoice = document.getElementById("color");
-const colorPicker = document.getElementById("colorPicker");
+const colorPicker = document.getElementById("colorPicker"); */
 let stateCopy;
-let drag;
+let drag = null;
 let dragDateId;
 let oldPos;
+let touchTime;
 
 let dataToLocalStorage = {
     not_started: [],
@@ -15,9 +18,16 @@ let dataToLocalStorage = {
     completed: [],
 };
 
+// Events to doucment and window
+
 document.addEventListener("click", () => {
     MyMenu.style.display = "none";
     stateCopy = null;
+});
+
+window.addEventListener("load", () => {
+    dataToLocalStorage = read();
+    RenderFromLocalStorage(dataToLocalStorage);
 });
 
 copy.addEventListener("click", () => {
@@ -29,6 +39,96 @@ function copyToCliboard(element) {
     navigator.clipboard.writeText(text);
 }
 
+function handleTouchStart(event, li) {
+    li.querySelector("p").contentEditable = false;
+
+    drag = li;
+    console.log("klfd", drag);
+    li.style.opacity = "0.5";
+
+    [...event.changedTouches].forEach((touch) => {
+        li.style.left = `${touch.pageX / 100}px`;
+        li.style.top = `${touch.pageY / 100}px`;
+    });
+
+    dragDateId = li.getAttribute("data-date");
+    oldPos = li.closest("div").id;
+}
+
+// This funny problem i take three days to solve it
+/*
+the problem was when i try to drop element to completed clumn (the last column by defualt)
+it was added to progress or not_started 
+
+I found the solve to this issue when i remove UpdateDrop function form if condation block and 
+added it to the end of the block of the function because
+there was forEach loop 
+so when for loop end the update drop function recalled
+*/
+function handleTouchEnd(event) {
+    // if (Date.now() - touchTime < 1000) return;
+    let newPOS;
+    let ul;
+    this.style.opacity = "1";
+    [...event.changedTouches].forEach((touch) => {
+        console.log(this);
+        this.style.position = "relative";
+        this.style.top = "0px";
+        this.style.left = "0px";
+        parenDivs.forEach((childDiv) => {
+            if (childDiv.offsetTop < touch.pageY && drag !== null) {
+                ul = childDiv.querySelector("ul");
+                ul.appendChild(drag);
+                newPOS = ul.closest("div").id;
+            }
+        });
+    });
+    // To remove the over class from the current column
+
+    ul.classList.remove("over");
+    // To remove the over class from the old column
+    document
+        .getElementById(oldPos)
+        .querySelector("ul")
+        .classList.remove("over");
+    UpdateDrop(dragDateId, newPOS);
+
+    dragDateId = null;
+    oldPos = null;
+    drag = null;
+}
+
+const uls = document.querySelectorAll("ul");
+let touchStartY = null;
+let startY = 0;
+let scrollY = 0;
+uls.forEach((ul) => {
+    ul.addEventListener("touchstart", (e) => {
+        startY = e.touches[0].pageY;
+        scrollY = ul.scrollTop;
+    });
+
+    ul.addEventListener("touchmove", (e) => {
+        const touchY = e.touches[0].pageY;
+        const touchDeltaY = touchY - startY;
+        ul.scrollTop = scrollY - touchDeltaY;
+    });
+
+    ul.addEventListener("touchend", () => {
+        startY = 0;
+        scrollY = 0;
+    });
+});
+
+// Thi big function i will explain it (maybe i will updat it in the near feautre)
+/*
+This function take three arguments 
+Ul => it's the ul element that will add the li to it
+taskObj = > this is taskoBj it passes to function beacuse it contain the data-date value the unique identifier for the task and the task text
+contentEdit (false) => this just make if it add the task using button it focus in the li 
+
+First i create all elements that will be used and maked it using create , append to add eventlistner to it
+*/
 function createELementsAndAppend(Ul, taskObj, contentEdit = false) {
     const li = document.createElement("li");
     const p = document.createElement("p");
@@ -104,34 +204,53 @@ function createELementsAndAppend(Ul, taskObj, contentEdit = false) {
 
     li.addEventListener(
         "dragstart",
-        (event) => {
-            drag = event.target;
-            dragDateId = event.target.getAttribute("data-date");
-            oldPos = event.target.parentElement.parentElement.id;
+        () => {
+            drag = li;
+            dragDateId = li.getAttribute("data-date");
+            oldPos = li.closest("div").id;
             li.style.opacity = "0.5";
         },
         false
     );
 
-    li.addEventListener("touchstart", handleTouchStart, false);
+    li.addEventListener(
+        "touchstart",
+        function (event) {
+            handleTouchStart(event, li);
+        },
+        false
+    );
 
     li.addEventListener(
         "touchmove",
         (event) => {
             event.preventDefault();
-            console.log("From Move Element", oldPos);
             [...event.changedTouches].forEach((touch) => {
                 li.style.position = "absolute";
-                li.style.top = `${touch.pageY - 15}px`;
-                li.style.left = `${touch.pageX - 15}px`;
-                li.id = touch.identifier;
+                li.style.top = `${touch.pageY}px`;
+                li.style.left = `${touch.pageX}px`;
+
+                if (touch.clientY > window.innerHeight - li.offsetHeight) {
+                    window.scrollBy(0, 1);
+                } else {
+                    window.scrollBy(0, -1);
+                }
+                parenDivs.forEach((childDiv) => {
+                    if (childDiv.offsetTop < touch.pageY) {
+                        let currentList = childDiv.querySelector("ul");
+                        currentList.classList.add("over");
+                    } else {
+                        let currentList = childDiv.querySelector("ul");
+                        currentList.classList.remove("over");
+                    }
+                });
             });
         },
         false
     );
     li.addEventListener("touchend", handleTouchEnd, false);
 
-    li.addEventListener("dragend", (event) => {
+    li.addEventListener("dragend", () => {
         drag = null;
         dragDateId = null;
         oldPos = null;
@@ -155,38 +274,32 @@ function createELementsAndAppend(Ul, taskObj, contentEdit = false) {
     }
 }
 
+// This work in pc only because touch events i add it in the pervious function
+
 parenDivs.forEach((childDiv) => {
     childDiv.addEventListener(
         "dragover",
         (event) => {
             event.preventDefault();
+            childDiv.classList.add("over");
+        },
+        false
+    );
+
+    childDiv.addEventListener(
+        "dragleave",
+        () => {
+            childDiv.classList.remove("over");
         },
         false
     );
 
     childDiv.addEventListener("drop", (event) => {
-        let divId = event.target;
-        if (divId.tagName !== "DIV") {
-            if (divId.tagName === "H2") {
-                divId = divId.parentElement.id;
-            } else if (divId.tagName === "UL") {
-                divId = divId.parentElement.id;
-            } else if (divId.tagName === "LI") {
-                divId = divId.parentElement.parentElement.id;
-            } else if (divId.tagName === "BUTTON") {
-                divId = divId.parentElement.id;
-            } else if (divId.tagName == "P") {
-                divId = divId.parentElement.parentElement.parentElement.id;
-            } else if (divId.tagName === "I") {
-                divId =
-                    divId.parentElement.parentElement.parentElement
-                        .parentElement.id;
-            }
-        } else {
-            divId = divId.id;
-        }
+        let divId = childDiv.id;
         const ul = childDiv.querySelector("ul");
         ul.append(drag);
+        childDiv.classList.remove("over");
+
         UpdateDrop(dragDateId, divId);
     });
 });
@@ -229,7 +342,6 @@ function save(data) {
 function deleteItem(datadate, pos) {
     const data = read();
     let item;
-    // data[pos]
     item = data[pos].find((item) => item.id == datadate);
     if (!item) return;
     const index = data[pos].indexOf(item);
@@ -238,6 +350,8 @@ function deleteItem(datadate, pos) {
     }
     save(data);
 }
+
+// Update Local Storage when drop
 
 function UpdateDrop(datadate, newPos) {
     const data = read();
@@ -254,7 +368,8 @@ function UpdateDrop(datadate, newPos) {
     save(data);
 }
 
-////////////////////////////////////////
+// Update when contentEditable be false
+
 function UpdateItem(datadate, newUpdate) {
     const data = read();
     let item;
@@ -268,6 +383,7 @@ function UpdateItem(datadate, newUpdate) {
     save(data);
 }
 
+// Called when page refresh or rerender
 function RenderFromLocalStorage(data) {
     for (const stateClass in data) {
         const cul = document.getElementById(stateClass);
@@ -278,61 +394,4 @@ function RenderFromLocalStorage(data) {
     }
 }
 
-window.addEventListener("load", () => {
-    dataToLocalStorage = read();
-    RenderFromLocalStorage(dataToLocalStorage);
-});
-
-function handleTouchStart(event) {
-    if (event.target.tagName !== "LI") {
-        if (event.target.tagName === "I") {
-            drag = event.target.parentElement.parentElement;
-        }
-    } else {
-        drag = event.target;
-    }
-    event.target.style.opacity = "0.5";
-
-    [...event.changedTouches].forEach((touch) => {
-        event.target.style.left = `${touch.pageX / 100}px`;
-        event.target.style.top = `${touch.pageY / 100}px`;
-        event.target.id = touch.identifier;
-    });
-
-    dragDateId = event.target.getAttribute("data-date");
-    oldPos = event.target.parentElement.parentElement.id;
-}
-
-// This funny problem i take three days to solve it
-/*
-the problem was when i try to drop element to completed clumn (the last column by defualt)
-it was added to progress or not_started 
-
-I found the solve to this issue when i remove UpdateDrop function form if condation block and 
-added it to the end of the block of the function because
-there was forEach loop 
-so when for loop end the update drop function recalled
-*/
-function handleTouchEnd(event) {
-    let newPOS;
-    event.target.style.opacity = "1";
-    [...event.changedTouches].forEach((touch) => {
-        event.target.style.position = "relative";
-        event.target.style.top = "0px";
-        event.target.style.left = "0px";
-        event.target.id = touch.identifier;
-        parenDivs.forEach((childDiv) => {
-            if (childDiv.offsetTop < touch.pageY && drag !== null) {
-                let uls = childDiv.querySelector("ul");
-                console.log(uls.parentElement.id, "FromTouchEnd");
-                uls.appendChild(drag);
-                newPOS = event.target.parentElement.parentElement.id;
-                console.log(newPOS, "FromTouchEnd");
-            }
-        });
-    });
-    UpdateDrop(dragDateId, newPOS);
-    dragDateId = null;
-    oldPos = null;
-    drag = null;
-}
+////////////////////////////////////////
