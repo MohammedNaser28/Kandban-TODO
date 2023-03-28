@@ -8,17 +8,17 @@
         <meta name="author" content="Mohammed Naser" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="icon" href="./clipboard.png" />
         <link
             href="https://fonts.googleapis.com/css2?family=McLaren&display=swap"
             rel="stylesheet"
         />
         <link rel="stylesheet" href="./css/main.css" />
-        <!-- <link rel="stylesheet" href="./css/queries.css" /> -->
-        <script src="./Js/script.js" defer></script>
         <script
             src="https://kit.fontawesome.com/c4c16b69f8.js"
             crossorigin="anonymous"
         ></script>
+        <script src="./Js/script.js" defer></script>
         <title>TO-DO</title>
     </head>
     <body>
@@ -27,28 +27,34 @@
         </header>
 
         <main>
+            <div class="myMenu" id="myMenu">
+                <ul>
+                    <li id="copy">Copy Text</li>
+                    <li id="change_color">Change Color</li>
+                </ul>
+            </div>
+
             <div class="container-boxez">
-                <div class="not-started">
+                <div id="not_started">
                     <h2>Not Started</h2>
                     <ul></ul>
                     <button class="add">+Add</button>
                 </div>
-                <div class="progress">
+                <div id="progress">
                     <h2>In Progress</h2>
                     <ul></ul>
                     <button class="add">+Add</button>
                 </div>
-                <div class="completed">
+                <div id="completed">
                     <h2>Completed</h2>
                     <ul class="completed-list"></ul>
                     <button class="add" id="add-completed">+Add</button>
                 </div>
             </div>
         </main>
-        <!--
 
-            <footer>
-                <div>
+        <footer>
+            <div>
                 <p class="copyright">
                     Copyright © 2023 by Mohammed Naser. All rights reserved.
                 </p>
@@ -74,6 +80,5 @@
                 </div>
             </div>
         </footer>
-                    -->
     </body>
 </html>
